@@ -59,6 +59,39 @@ h2{font-family:'Fraunces',Georgia,serif;margin:.1em 0 .25em;font-size:1.5rem;fon
 .choice:hover{border-color:var(--ink)}
 .choice.correct{border-color:var(--teal);background:rgba(31,111,107,.1);font-weight:800}.choice.wrong{border-color:var(--red);background:rgba(197,70,44,.08)}
 textarea{width:100%;min-height:110px;border:1.5px solid var(--line);border-radius:12px;background:#fffaf0;padding:12px;font-family:inherit;font-size:.96rem;color:var(--ink)}
+.selfcheck{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.kchip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 10px;border-radius:999px;border:1.5px solid var(--line);color:var(--soft);background:#fffaf0;display:flex;align-items:center;gap:6px;transition:.2s}
+.kchip::before{content:"\25CB"}
+.kchip.on{border-color:var(--teal);background:rgba(31,111,107,.1);color:var(--teal-deep)}
+.kchip.on::before{content:"\25CF"}
+.resp-actions{margin-top:4px}
+.evidence{display:none;margin-top:18px;border:1.5px solid var(--ink);border-radius:14px;background:#fff;overflow:hidden}
+.evidence.show{display:block}
+.ev-head{background:var(--ink);color:var(--paper);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.ev-head h4{margin:0;font-family:'Fraunces',serif;font-weight:600;font-size:1.05rem}
+.ev-head .pbtn{background:var(--paper);color:var(--ink);border:none;border-radius:8px;padding:7px 13px;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer}
+.ev-body{padding:16px 18px;font-size:.92rem}
+.ev-body .row{margin-bottom:13px}
+.ev-body .k{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-deep);display:block;margin-bottom:3px}
+.ev-body .tag{display:inline-block;font-size:.78rem;padding:2px 8px;border-radius:999px;margin-left:6px}
+.ev-body .tag.ok{background:rgba(31,111,107,.12);color:var(--teal-deep)}
+.ev-body .tag.no{background:rgba(197,70,44,.1);color:var(--red)}
+.ev-body .ideas{display:flex;flex-wrap:wrap;gap:6px}
+.ev-body .ideas span{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+.ev-body .ideas .yes{background:rgba(31,111,107,.1);color:var(--teal-deep);border-color:rgba(31,111,107,.35)}
+.ev-body .ideas .no{background:#fff;color:var(--soft)}
+.ev-body .resp-text{white-space:pre-wrap;background:var(--paper);border-radius:8px;padding:11px 13px;border:1px solid var(--line)}
+.ev-body .resp-text.empty{color:var(--soft);font-style:italic}
+@media print{
+  body{background:#fff;background-image:none}
+  nav.tabs,#panel-story,#panel-genes,#panel-repair,footer,
+  #panel-explain h2,#panel-explain>.card>p,#response,#checkResponse,#responseFeedback,.selfcheck,.resp-actions{display:none!important}
+  .panel{display:block!important}
+  .card{border:none;box-shadow:none;padding:0}
+  .evidence{display:block!important;border:1.5px solid #000}
+  .ev-head{background:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ev-head .pbtn{display:none}
+}
 footer{border-top:1.5px solid var(--ink);margin-top:24px;padding-top:16px;color:var(--soft)}
 </style>
 </head>
@@ -170,8 +203,13 @@ footer{border-top:1.5px solid var(--ink);margin-top:24px;padding-top:16px;color:
 <h2>Part 4: Use the model to explain</h2>
 <p><b>Prompt:</b> How do cell division, differentiation, and gene expression help produce and maintain a complex organism?</p>
 <textarea id="response" placeholder="Cell division helps by... Differentiation happens when... Cells have the same DNA but... These processes maintain organisms by..."></textarea>
+<div class="selfcheck" id="selfcheck"></div>
+<div class="resp-actions">
 <button class="btn" id="checkResponse">Check for key ideas</button>
+<button class="btn gold" id="evidenceBtn">Create printable evidence</button>
+</div>
 <div class="feedback" id="responseFeedback">A strong response mentions division, differentiation, same DNA, different genes switched on, specialized tissues, and repair/maintenance.</div>
+<div class="evidence" id="evidenceOut"></div>
 </div>
 </section>
 
@@ -181,6 +219,9 @@ footer{border-top:1.5px solid var(--ink);margin-top:24px;padding-top:16px;color:
 <script>
 const symbols={stem:'●',muscle:'M',nerve:'N',skin:'S',blood:'B'};
 const GENES=['muscle','nerve','skin','blood'];
+const KEY_GROUPS=[['division',['division','divide','mitosis','new cells','more cells']],['differentiation',['differentiation','differentiate','specialized','specialize']],['same DNA',['same dna','same genome','identical dna','same genetic']],['genes on/off',['gene','genes','switched on','turned on','expressed','expression','active']],['maintenance/repair',['maintain','repair','replace','damage','wound','scrape','heal']]];
+function escapeHTML(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function ideasCoverage(t){return KEY_GROUPS.map(g=>[g[0],g[1].some(w=>t.includes(w))])}
 let cells=[{type:'stem'}], max=32;
 let tissues={muscle:0,nerve:0,skin:0,blood:0};
 function qs(x){return document.querySelector(x)} function qsa(x){return [...document.querySelectorAll(x)]}
@@ -238,10 +279,39 @@ repairBtn.onclick=()=>{skinStrip.innerHTML='';for(let i=0;i<18;i++)skinStrip.app
 repairReset.onclick=resetRepair;
 qsa('.choice').forEach(c=>c.onclick=()=>{qsa('.choice').forEach(x=>x.classList.remove('correct','wrong')); if(c.dataset.correct==='true'){c.classList.add('correct');repairFeedback.className='feedback';repairFeedback.innerHTML='<b>Correct.</b> Maintenance needs both: division produces new cells, and differentiation gives them the specialized structure and function of skin cells.'}else{c.classList.add('wrong');repairFeedback.className='feedback warning';repairFeedback.innerHTML='<b>Try again.</b> Ask: does the tissue need more cells, specialized cells, or both?'}});
 
-/* ---- Explain checker ---- */
-checkResponse.onclick=()=>{let t=response.value.toLowerCase();let groups=[['division',['division','divide','mitosis','new cells','more cells']],['differentiation',['differentiation','differentiate','specialized','specialize']],['same DNA',['same dna','same genome','identical dna','same genetic']],['genes on/off',['gene','genes','switched on','turned on','expressed','expression','active']],['maintenance/repair',['maintain','repair','replace','damage','wound','scrape','heal']]];let miss=groups.filter(g=>!g[1].some(w=>t.includes(w))).map(g=>g[0]);responseFeedback.className='feedback '+(miss.length?'warning':'');responseFeedback.innerHTML=miss.length?'<b>Revise:</b> Try to add these ideas: '+miss.join(', ')+'.':'<b>Strong explanation.</b> You connected division, differentiation, gene expression, and maintenance.'};
+/* ---- Self-check chips (live) ---- */
+function renderSelfcheck(){let t=(response.value||'').toLowerCase();selfcheck.innerHTML='';ideasCoverage(t).forEach(([label,on])=>{let c=document.createElement('span');c.className='kchip'+(on?' on':'');c.textContent=label;selfcheck.appendChild(c);});}
+response.addEventListener('input',renderSelfcheck);
 
-renderAll();resetRepair();setProfile(null);
+/* ---- Explain checker ---- */
+checkResponse.onclick=()=>{let t=response.value.toLowerCase();let miss=KEY_GROUPS.filter(g=>!g[1].some(w=>t.includes(w))).map(g=>g[0]);responseFeedback.className='feedback '+(miss.length?'warning':'');responseFeedback.innerHTML=miss.length?'<b>Revise:</b> Try to add these ideas: '+miss.join(', ')+'.':'<b>Strong explanation.</b> You connected division, differentiation, gene expression, and maintenance.'};
+
+/* ---- Printable evidence ---- */
+evidenceBtn.onclick=()=>{
+  let total=cells.length;
+  let diff=GENES.reduce((a,k)=>a+tissues[k],0);
+  let breakdown=GENES.filter(k=>tissues[k]>0).map(k=>tissues[k]+' '+k).join(', ');
+  let chosen=qsa('.choice').find(c=>c.classList.contains('correct')||c.classList.contains('wrong'));
+  let checkHtml=chosen?escapeHTML(chosen.textContent)+(chosen.classList.contains('correct')?' <span class="tag ok">correct</span>':' <span class="tag no">reconsider</span>'):'<span style="color:var(--soft);font-style:italic">not yet answered</span>';
+  let resp=response.value.trim();
+  let ideasHtml=ideasCoverage(resp.toLowerCase()).map(([l,on])=>'<span class="'+(on?'yes':'no')+'">'+(on?'\u2713 ':'\u25CB ')+l+'</span>').join('');
+  let stamp=new Date().toLocaleString();
+  evidenceOut.innerHTML=
+    '<div class="ev-head"><h4>Student Model &amp; Explanation</h4><button class="pbtn" onclick="window.print()">\u23B7 Print / Save PDF</button></div>'+
+    '<div class="ev-body">'+
+    '<div class="row"><span class="k">Standard</span>Use a model to illustrate the role of cellular division and differentiation in producing and maintaining complex organisms.</div>'+
+    '<div class="row"><span class="k">Cell division \u2014 cells produced</span>Started from 1 cell and produced <b>'+total+'</b> total cell'+(total===1?'':'s')+'.</div>'+
+    '<div class="row"><span class="k">Differentiation \u2014 specialized cells</span>'+(diff>0?'<b>'+diff+'</b> cell'+(diff===1?'':'s')+' differentiated: '+breakdown+'.':'No cells differentiated yet.')+'</div>'+
+    '<div class="row"><span class="k">Maintenance &amp; repair check</span>'+checkHtml+'</div>'+
+    '<div class="row"><span class="k">Key ideas used in explanation</span><div class="ideas">'+ideasHtml+'</div></div>'+
+    '<div class="row"><span class="k">Written explanation</span><div class="resp-text '+(resp?'':'empty')+'">'+(resp?escapeHTML(resp):'No written explanation entered yet.')+'</div></div>'+
+    '<div class="row" style="margin:0"><span class="k">Generated</span><span style="color:var(--soft)">'+stamp+'</span></div>'+
+    '</div>';
+  evidenceOut.classList.add('show');
+  evidenceOut.scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+
+renderAll();resetRepair();setProfile(null);renderSelfcheck();
 </script>
 </body>
 </html>
