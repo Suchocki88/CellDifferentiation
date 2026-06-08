@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Division, Differentiation & Gene Expression Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f1e9da;--card:#f8f2e6;--ink:#23302c;--soft:#4c5d58;--teal-deep:#155350;--line:rgba(35,48,44,.18);--teal:#1f6f6b;--red:#c5462c;--gold:#c5882a;--blue:#4777a8;--purple:#7a5ca8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Hanken Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 16% 10%,rgba(197,136,42,.06),transparent 42%),radial-gradient(circle at 88% 90%,rgba(31,111,107,.07),transparent 45%)}
+.wrap{max-width:1100px;margin:auto;padding:28px 18px 60px}
+header{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:22px}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-deep);display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block}
+h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(2rem,5vw,3.5rem);line-height:1.0;margin:0 0 10px;letter-spacing:-.01em}
+h1 em{font-style:italic;color:var(--red);font-weight:500}
+.lede{max-width:780px;color:var(--soft);font-size:1.05rem;margin:0}
+.chip{display:inline-block;margin-top:14px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;color:var(--soft);font-size:.8rem;font-family:'JetBrains Mono',monospace}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0}
+.tab{border:1.5px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;padding:10px 15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.tab:hover{background:var(--card)}
+.tab[aria-selected=true]{background:var(--ink);color:var(--paper)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--card);border:1.5px solid var(--ink);border-radius:18px;padding:22px;box-shadow:0 14px 32px -26px #000}
+.grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}
+h2{font-family:'Fraunces',Georgia,serif;margin:.1em 0 .25em;font-size:1.5rem;font-weight:600} h3{font-family:'Fraunces',Georgia,serif;margin:.2em 0 .4em;font-weight:600}
+.small{color:var(--soft);font-size:.92rem}
+.btn{border:0;background:var(--teal);color:white;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;margin:5px 6px 5px 0;font-family:inherit;transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.dark{background:var(--ink)}.btn.red{background:var(--red)}.btn.gold{background:var(--gold)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.stage{min-height:285px;border:1.5px dashed var(--line);border-radius:16px;background:#fffaf0;padding:14px;display:flex;gap:8px;align-content:flex-start;align-items:flex-start;flex-wrap:wrap}
+.cell{width:48px;height:48px;border:2px solid rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.25);opacity:.2}to{transform:scale(1);opacity:1}}
+.stem{background:#eadbff;color:#432969;border-radius:50%}.muscle{background:#ffd5cf;color:#842c23;border-radius:14px}.nerve{background:#d8e9ff;color:#1e527f;border-radius:50% 50% 50% 8px}.skin{background:#ffe3b7;color:#704600;border-radius:10px}.blood{background:#ffd6dd;color:#8a1d2c;border-radius:50%}.mini{width:28px;height:28px;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat,.note{border:1px solid var(--line);background:#fffaf0;border-radius:12px;padding:10px}.stat .small{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}.stat b{display:block;font-size:1.3rem;font-family:'Fraunces',serif}
+.dna{border:1.5px solid var(--line);border-radius:16px;padding:14px;background:#fffaf0}
+.dna .hint{font-size:.84rem;color:var(--soft);margin:.2em 0 12px}
+.gene-row{display:grid;grid-template-columns:120px 1fr 74px;gap:10px;align-items:center;margin:9px 0}
+.gene-label{font-weight:700}.gene{height:18px;border-radius:999px;background:#ddd;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.16);transition:.2s}
+.gene.on{box-shadow:0 0 0 3px rgba(31,111,107,.12)}.gene.muscle.on{background:var(--red)}.gene.nerve.on{background:var(--blue)}.gene.skin.on{background:var(--gold)}.gene.blood.on{background:#a22d42}.gene.off{background:#d9d0c2}
+.switch{border:1.5px solid var(--line);background:white;border-radius:999px;padding:6px 8px;cursor:pointer;font-weight:800;color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px;transition:.15s}
+.switch:hover{border-color:var(--ink)}
+.switch.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.pathways{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}@media(max-width:850px){.pathways{grid-template-columns:repeat(2,1fr)}}
+.path{border:1.5px solid var(--line);border-radius:14px;padding:12px;background:#fffaf0;text-align:center}
+.path button{width:100%;margin-top:8px;border:0;border-radius:10px;padding:9px;color:white;font-weight:900;cursor:pointer;font-family:inherit}.path.muscle button{background:var(--red)}.path.nerve button{background:var(--blue)}.path.skin button{background:var(--gold)}.path.blood button{background:#a22d42}
+.tissues{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.tissue{border:1.5px solid var(--line);border-radius:16px;padding:12px;background:#fffaf0}.tissue-cells{display:flex;flex-wrap:wrap;gap:6px;min-height:54px}
+.feedback{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(31,111,107,.1);border:1.5px solid rgba(31,111,107,.35);color:#21483d}
+.warning{background:rgba(197,70,44,.08);border-color:rgba(197,70,44,.35);color:#6d2b24}
+.repair{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.repair{grid-template-columns:1fr}}
+.wound{width:32px;height:32px;border-radius:9px;background:repeating-linear-gradient(45deg,#fff,#fff 4px,#d8d0c2 4px,#d8d0c2 8px);border:2px dashed var(--red)}
+.choice{display:block;width:100%;border:1.5px solid var(--line);background:#fffaf0;border-radius:12px;padding:12px;text-align:left;margin:8px 0;cursor:pointer;color:var(--ink);font-family:inherit;font-size:.95rem}
+.choice:hover{border-color:var(--ink)}
+.choice.correct{border-color:var(--teal);background:rgba(31,111,107,.1);font-weight:800}.choice.wrong{border-color:var(--red);background:rgba(197,70,44,.08)}
+textarea{width:100%;min-height:110px;border:1.5px solid var(--line);border-radius:12px;background:#fffaf0;padding:12px;font-family:inherit;font-size:.96rem;color:var(--ink)}
+footer{border-top:1.5px solid var(--ink);margin-top:24px;padding-top:16px;color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<div class="eyebrow"><span class="dot"></span> Life Science · Cell Growth &amp; Development · Modeling</div>
+<h1>Division, Differentiation &amp; <em>Gene Expression</em></h1>
+<p class="lede">Use this model to show how one cell can produce many cells, how cells with the same DNA become different cell types by switching different genes on, and how division plus differentiation maintain tissues.</p>
+<span class="chip">Use a model to illustrate the role of cellular division and differentiation in producing and maintaining complex organisms.</span>
+</header>
+
+<nav class="tabs">
+<button class="tab" aria-selected="true" data-tab="story">1. Development Flow</button>
+<button class="tab" aria-selected="false" data-tab="genes">2. Same DNA, Different Genes On</button>
+<button class="tab" aria-selected="false" data-tab="repair">3. Maintenance &amp; Repair</button>
+<button class="tab" aria-selected="false" data-tab="explain">4. Explain the Model</button>
+</nav>
+
+<section class="panel active" id="panel-story">
+<div class="grid">
+<div class="card">
+<h2>Part 1: One continuous developmental story</h2>
+<p>Start with one fertilized egg cell. Divide it to make more cells. Then specialize some daughter cells into different cell types.</p>
+<button class="btn" id="divideBtn">Divide unspecialized cells</button>
+<button class="btn dark" id="resetBtn">Reset model</button>
+<div class="stats">
+<div class="stat"><span class="small">Unspecialized</span><b id="stemCount">1</b></div>
+<div class="stat"><span class="small">Specialized</span><b id="specCount">0</b></div>
+<div class="stat"><span class="small">Total cells</span><b id="totalCount">1</b></div>
+<div class="stat"><span class="small">Stage</span><b id="stageName">zygote</b></div>
+</div>
+<div class="stage" id="cellStage"></div>
+</div>
+<div class="card">
+<h2>Differentiation pathways</h2>
+<p class="small">Each button takes one unspecialized daughter cell and turns on a gene-expression pattern.</p>
+<div class="pathways">
+<div class="path muscle"><b>Muscle</b><p class="small">contractile proteins on</p><button data-type="muscle">Differentiate</button></div>
+<div class="path nerve"><b>Nerve</b><p class="small">signaling genes on</p><button data-type="nerve">Differentiate</button></div>
+<div class="path skin"><b>Skin</b><p class="small">barrier proteins on</p><button data-type="skin">Differentiate</button></div>
+<div class="path blood"><b>Blood</b><p class="small">transport genes on</p><button data-type="blood">Differentiate</button></div>
+</div>
+<div class="feedback" id="storyFeedback">Divide the first cell. Then specialize some of the daughter cells.</div>
+</div>
+</div>
+</section>
+
+<section class="panel" id="panel-genes">
+<div class="grid">
+<div class="card">
+<h2>Part 2: Same DNA, different genes switched on</h2>
+<p>Every cell carries the <b>same DNA</b>. Flip the switches yourself, or load a preset, and watch which cell type that pattern produces — the genes never change, only which ones are active.</p>
+<div class="dna">
+<h3>Cell genome model</h3>
+<p class="hint">Tap a switch to turn that gene ON or OFF.</p>
+<div class="gene-row"><span class="gene-label">Muscle gene</span><span class="gene muscle off" id="gMuscle"></span><button class="switch" id="sMuscle">OFF</button></div>
+<div class="gene-row"><span class="gene-label">Nerve gene</span><span class="gene nerve off" id="gNerve"></span><button class="switch" id="sNerve">OFF</button></div>
+<div class="gene-row"><span class="gene-label">Skin gene</span><span class="gene skin off" id="gSkin"></span><button class="switch" id="sSkin">OFF</button></div>
+<div class="gene-row"><span class="gene-label">Blood gene</span><span class="gene blood off" id="gBlood"></span><button class="switch" id="sBlood">OFF</button></div>
+</div>
+<div style="margin-top:12px">
+<button class="btn red" data-profile="muscle">Muscle pattern</button>
+<button class="btn" style="background:var(--blue)" data-profile="nerve">Nerve pattern</button>
+<button class="btn gold" data-profile="skin">Skin pattern</button>
+<button class="btn" style="background:#a22d42" data-profile="blood">Blood pattern</button>
+<button class="btn dark" data-profile="">All off</button>
+</div>
+<div class="feedback" id="geneFeedback"><b>Same DNA in every cell.</b> No cell-type genes are switched on yet, so this cell is unspecialized — like a stem cell. Flip a switch or load a pattern to commit it to a type.</div>
+</div>
+<div class="card">
+<h2>Tissues produced by differentiated cells</h2>
+<div class="tissues">
+<div class="tissue"><h3>Muscle tissue</h3><div class="tissue-cells" id="muscleTissue"></div></div>
+<div class="tissue"><h3>Nervous tissue</h3><div class="tissue-cells" id="nerveTissue"></div></div>
+<div class="tissue"><h3>Skin tissue</h3><div class="tissue-cells" id="skinTissue"></div></div>
+<div class="tissue"><h3>Blood</h3><div class="tissue-cells" id="bloodTissue"></div></div>
+</div>
+<div class="feedback" id="tissueFeedback">Specialize cells in Part 1 to build tissues here.</div>
+</div>
+</div>
+</section>
+
+<section class="panel" id="panel-repair">
+<div class="card">
+<h2>Part 3: Maintaining a complex organism</h2>
+<p>Damage removes skin cells. Repair requires cell division to make replacement cells and differentiation so new cells become skin cells.</p>
+<div class="repair">
+<div>
+<h3>Skin tissue model</h3>
+<div class="stage" id="skinStrip"></div>
+<button class="btn red" id="injureBtn">Create scrape</button>
+<button class="btn gold" id="repairBtn" disabled>Repair with division + differentiation</button>
+<button class="btn dark" id="repairReset">Reset tissue</button>
+</div>
+<div>
+<h3>Check the model</h3>
+<button class="choice" data-correct="false">Only differentiation is needed, because old cells can simply change jobs.</button>
+<button class="choice" data-correct="true">Cell division makes replacement cells, and differentiation makes them skin cells.</button>
+<button class="choice" data-correct="false">Only cell division is needed; new cells do not need to specialize.</button>
+<div class="feedback" id="repairFeedback">Create a scrape, then repair it.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="panel" id="panel-explain">
+<div class="card">
+<h2>Part 4: Use the model to explain</h2>
+<p><b>Prompt:</b> How do cell division, differentiation, and gene expression help produce and maintain a complex organism?</p>
+<textarea id="response" placeholder="Cell division helps by... Differentiation happens when... Cells have the same DNA but... These processes maintain organisms by..."></textarea>
+<button class="btn" id="checkResponse">Check for key ideas</button>
+<div class="feedback" id="responseFeedback">A strong response mentions division, differentiation, same DNA, different genes switched on, specialized tissues, and repair/maintenance.</div>
+</div>
+</section>
+
+<footer><b>Teacher note:</b> Keeps the activity touch-friendly while making the central, misconception-resistant idea interactive: most specialized cells contain the same DNA, and different genes are switched on. Pairs with the organization model — differentiation here ends where the tissue/organ hierarchy begins.</footer>
+</div>
+
+<script>
+const symbols={stem:'●',muscle:'M',nerve:'N',skin:'S',blood:'B'};
+const GENES=['muscle','nerve','skin','blood'];
+let cells=[{type:'stem'}], max=32;
+let tissues={muscle:0,nerve:0,skin:0,blood:0};
+function qs(x){return document.querySelector(x)} function qsa(x){return [...document.querySelectorAll(x)]}
+function cap(s){return s[0].toUpperCase()+s.slice(1)}
+
+qsa('.tab').forEach(t=>t.onclick=()=>{qsa('.tab').forEach(x=>x.setAttribute('aria-selected','false'));t.setAttribute('aria-selected','true');qsa('.panel').forEach(p=>p.classList.remove('active'));qs('#panel-'+t.dataset.tab).classList.add('active');renderAll()});
+
+function makeCell(type,mini=false){let d=document.createElement('div');d.className='cell '+type+(mini?' mini':'');d.textContent=symbols[type];d.title=type+' cell: same DNA, different active genes';return d}
+function stage(n){return n===1?'zygote':n<8?'early embryo':n<18?'cell mass':'differentiating embryo'}
+
+function renderAll(){
+  cellStage.innerHTML=''; cells.forEach(c=>cellStage.appendChild(makeCell(c.type)));
+  let stem=cells.filter(c=>c.type==='stem').length, spec=cells.length-stem;
+  stemCount.textContent=stem; specCount.textContent=spec; totalCount.textContent=cells.length; stageName.textContent=stage(cells.length);
+  divideBtn.disabled=stem===0 || cells.length>=max;
+  GENES.forEach(type=>{let el=qs('#'+type+'Tissue'); if(el){el.innerHTML=''; for(let i=0;i<tissues[type];i++)el.appendChild(makeCell(type,true));}});
+  if(spec>=3){storyFeedback.innerHTML='<b>Model result:</b> One cell has produced many daughter cells, and some daughters have differentiated into specialized cell types.'}
+  const tf=qs('#tissueFeedback');
+  if(tf){const typesMade=GENES.filter(t=>tissues[t]>0).length;
+    tf.innerHTML = typesMade===0 ? 'Specialize cells in Part 1 to build tissues here.'
+      : typesMade<3 ? '<b>Building:</b> '+typesMade+' specialized cell type'+(typesMade>1?'s':'')+' so far. Complex organisms need several different types, not just more identical cells.'
+      : '<b>Tissues forming:</b> several specialized cell types are now organized into different tissues — the very start of the cell → tissue → organ hierarchy.';
+  }
+}
+
+divideBtn.onclick=()=>{let next=[]; cells.forEach(c=>{if(c.type==='stem'&&next.length<max-1)next.push({type:'stem'},{type:'stem'});else next.push(c)});cells=next.slice(0,max);renderAll()};
+resetBtn.onclick=()=>{cells=[{type:'stem'}];tissues={muscle:0,nerve:0,skin:0,blood:0};storyFeedback.innerHTML='Divide the first cell. Then specialize some of the daughter cells.';renderAll();setProfile(null)};
+qsa('.path button').forEach(b=>b.onclick=()=>{let i=cells.findIndex(c=>c.type==='stem');if(i<0){storyFeedback.innerHTML='<b>No unspecialized cells remain.</b> Divide more cells before differentiating.';return}let type=b.dataset.type;cells[i]={type};tissues[type]++;setProfile(type);storyFeedback.innerHTML='<b>Differentiation:</b> A daughter cell kept the same DNA, but switched on genes for a '+type+' cell.';renderAll()});
+
+/* ---- Gene-expression panel: interactive switches + presets ---- */
+const geneEl={muscle:['gMuscle','sMuscle'],nerve:['gNerve','sNerve'],skin:['gSkin','sSkin'],blood:['gBlood','sBlood']};
+let geneState={muscle:false,nerve:false,skin:false,blood:false};
+function renderGenes(){
+  GENES.forEach(k=>{let g=qs('#'+geneEl[k][0]),s=qs('#'+geneEl[k][1]); if(!g||!s)return; let on=geneState[k];
+    g.className='gene '+k+' '+(on?'on':'off'); s.textContent=on?'ON':'OFF'; s.className='switch '+(on?'on':''); s.setAttribute('aria-pressed',on);});
+  let active=GENES.filter(k=>geneState[k]); let warn=false, msg;
+  if(active.length===0){
+    msg='<b>Same DNA in every cell.</b> No cell-type genes are switched on, so this cell is unspecialized — like a stem cell that hasn’t committed to a fate. Flip a switch or load a pattern to commit it.';
+  } else if(active.length===1){
+    msg='<b>'+cap(active[0])+' cell.</b> The DNA is identical to every other cell — only the '+active[0]+' genes are switched on; the other cell-type genes stay off. That difference in <i>expression</i> is what makes this a '+active[0]+' cell.';
+  } else {
+    warn=true;
+    msg='<b>Conflicting programs.</b> A single cell can’t be a '+active.map(cap).join(' and a ')+' cell at once. Differentiation switches <i>one</i> cell-type program on and keeps the rest off — turn all but one back off.';
+  }
+  geneFeedback.className='feedback '+(warn?'warning':''); geneFeedback.innerHTML=msg;
+}
+function setProfile(type){GENES.forEach(k=>geneState[k]=(k===type)); renderGenes();}
+GENES.forEach(k=>{let s=qs('#'+geneEl[k][1]); if(s)s.onclick=()=>{geneState[k]=!geneState[k]; renderGenes();};});
+qsa('[data-profile]').forEach(b=>b.onclick=()=>setProfile(b.dataset.profile||null));
+
+/* ---- Repair / maintenance ---- */
+function resetRepair(){skinStrip.innerHTML='';for(let i=0;i<18;i++)skinStrip.appendChild(makeCell('skin',true));injureBtn.disabled=false;repairBtn.disabled=true;repairFeedback.className='feedback';repairFeedback.innerHTML='Create a scrape, then repair it.';qsa('.choice').forEach(c=>c.classList.remove('correct','wrong'))}
+injureBtn.onclick=()=>{skinStrip.innerHTML='';for(let i=0;i<7;i++)skinStrip.appendChild(makeCell('skin',true));for(let i=0;i<5;i++){let w=document.createElement('div');w.className='wound';skinStrip.appendChild(w)}for(let i=0;i<6;i++)skinStrip.appendChild(makeCell('skin',true));injureBtn.disabled=true;repairBtn.disabled=false;repairFeedback.className='feedback warning';repairFeedback.innerHTML='<b>Damage:</b> Cells are missing. The tissue can’t be maintained unless replacement cells are produced.'};
+repairBtn.onclick=()=>{skinStrip.innerHTML='';for(let i=0;i<18;i++)skinStrip.appendChild(makeCell('skin',true));repairBtn.disabled=true;repairFeedback.className='feedback';repairFeedback.innerHTML='<b>Repair:</b> Nearby cells divide to make replacements. Those new cells switch on skin-cell genes and differentiate into skin cells, restoring the tissue.'};
+repairReset.onclick=resetRepair;
+qsa('.choice').forEach(c=>c.onclick=()=>{qsa('.choice').forEach(x=>x.classList.remove('correct','wrong')); if(c.dataset.correct==='true'){c.classList.add('correct');repairFeedback.className='feedback';repairFeedback.innerHTML='<b>Correct.</b> Maintenance needs both: division produces new cells, and differentiation gives them the specialized structure and function of skin cells.'}else{c.classList.add('wrong');repairFeedback.className='feedback warning';repairFeedback.innerHTML='<b>Try again.</b> Ask: does the tissue need more cells, specialized cells, or both?'}});
+
+/* ---- Explain checker ---- */
+checkResponse.onclick=()=>{let t=response.value.toLowerCase();let groups=[['division',['division','divide','mitosis','new cells','more cells']],['differentiation',['differentiation','differentiate','specialized','specialize']],['same DNA',['same dna','same genome','identical dna','same genetic']],['genes on/off',['gene','genes','switched on','turned on','expressed','expression','active']],['maintenance/repair',['maintain','repair','replace','damage','wound','scrape','heal']]];let miss=groups.filter(g=>!g[1].some(w=>t.includes(w))).map(g=>g[0]);responseFeedback.className='feedback '+(miss.length?'warning':'');responseFeedback.innerHTML=miss.length?'<b>Revise:</b> Try to add these ideas: '+miss.join(', ')+'.':'<b>Strong explanation.</b> You connected division, differentiation, gene expression, and maintenance.'};
+
+renderAll();resetRepair();setProfile(null);
+</script>
+</body>
+</html>
